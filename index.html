@@ -908,6 +908,7 @@
   </div>
 
   <input type="hidden" id="apollo-key" value="AlczBIAqTleDHFBmfWVlGQ" />
+  <input type="hidden" id="claude-key-default" value="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" />
 
   <!-- Cloudflare Worker + Salesforce -->
   <div style="margin-bottom:16px; animation: slideUp 0.5s 0.19s ease both;">
@@ -2105,9 +2106,11 @@ No markdown, no backticks, no explanation.`;
     if (savedSecret) {
       document.getElementById('worker-secret').value = savedSecret;
     }
-    const savedClaudeKey = localStorage.getItem('fh_claude_key');
+    const savedClaudeKey = localStorage.getItem('fh_claude_key') 
+      || document.getElementById('claude-key-default').value;
     if (savedClaudeKey) {
       document.getElementById('claude-key').value = savedClaudeKey;
+      localStorage.setItem('fh_claude_key', savedClaudeKey);
     }
     // Auto-test connection if URL is saved
     if (savedUrl) {
