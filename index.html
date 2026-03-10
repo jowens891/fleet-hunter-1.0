@@ -908,7 +908,6 @@
   </div>
 
   <input type="hidden" id="apollo-key" value="AlczBIAqTleDHFBmfWVlGQ" />
-  <input type="hidden" id="claude-key-default" value="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" />
 
   <!-- Cloudflare Worker + Salesforce -->
   <div style="margin-bottom:16px; animation: slideUp 0.5s 0.19s ease both;">
@@ -927,17 +926,8 @@
     </div>
   </div>
 
-  <!-- Claude API Key -->
-  <div class="panel" style="margin-bottom:10px;">
-    <div class="panel-header" style="cursor:default;">
-      <span>🤖 Claude API Key</span>
-      <span style="font-size:11px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0;">Required for AI search mode when Apollo credits are exhausted</span>
-    </div>
-    <div style="padding:14px 16px;">
-      <input type="password" id="claude-key" placeholder="sk-ant-..." oninput="onClaudeKeyChange()" style="width:100%; box-sizing:border-box; background:var(--surface); border:1px solid rgba(245,158,11,0.25); border-radius:4px; padding:10px 14px; color:var(--text); font-family:'Barlow',sans-serif; font-size:13px; outline:none;" />
-      <div style="font-size:11px; color:var(--muted); margin-top:8px;">Get your API key at <a href="https://console.anthropic.com" target="_blank" style="color:#f59e0b;">console.anthropic.com</a> → API Keys</div>
-    </div>
-  </div>
+  <!-- Claude key now stored securely in Cloudflare Worker as ANTHROPIC_API_KEY -->
+  <input type="hidden" id="claude-key" value="" />
 
   <button class="run-btn" id="run-btn" onclick="runAgent()">⚡ Run Fleet Hunter Agent</button>
 
@@ -1538,9 +1528,9 @@
           const prompt = 'You are a commercial fleet intelligence agent. Find businesses in these US states with ' + fleetMin + '+ vehicle fleets.\n\nTarget industries: ' + industries.join('; ') + '\nStates: ' + batch.join(', ') + '\n' + passFocus[pass] + '\n\nSTRICT EXCLUSIONS — never include trucking/freight/carrier/semi-truck companies or fleet management software/telematics vendors. Only companies that USE a fleet to deliver their own service.\n' + seenList + '\n\nGenerate 3-5 unique realistic companies per state spread across different industries and cities.\n\nFor fleet size use realistic ratios: medical transport 0.7-1.0, pest control/landscaping/traffic control 0.5-0.8, drain/sewer/utilities/environmental 0.5-0.7, HVAC/plumbing 0.4-0.6, fire protection/telecom/cable/electrical/oil & gas 0.3-0.5, construction 0.2-0.4, engineering 0.1-0.2. Set hasFleetManager:true if the company would realistically employ a dedicated Fleet Manager (generally 75+ vehicles). If hasFleetManager is true, include a Fleet Manager in executives.\n\nReturn ONLY a valid JSON array, no markdown:\n[{"name":"...","city":"City, ST","type":"e.g. Commercial HVAC","employees":250,"fleet":95,"hasFleetManager":true,"phone":"(555) 555-0100","executives":[{"title":"CEO","name":"Full Name","email":"f.name@co.com","phone":"(555) 555-0101","linkedin":"https://www.linkedin.com/in/first-last"},{"title":"Fleet Manager","name":"Full Name","email":"f.name@co.com","phone":"(555) 555-0102","linkedin":"https://www.linkedin.com/in/first-last"}]}]';
 
           try {
-            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            const resp = await fetch(workerUrl + '/ai', {
               method: "POST",
-              headers: { "Content-Type": "application/json", "x-api-key": (document.getElementById('claude-key').value || '').trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+              headers: { "Content-Type": "application/json", "X-Worker-Secret": workerSecret },
               body: JSON.stringify({
                 model: "claude-sonnet-4-20250514",
                 max_tokens: 4000,
@@ -1640,9 +1630,11 @@ ${allCompanies.map(c => {
 Write a concise, professional email grouping companies by industry with full executive contact details. Format: Subject: [subject]\n\n[body]. Under 1000 words.`;
 
       try {
-        const emailResp = await fetch("https://api.anthropic.com/v1/messages", {
+        const wUrl = (document.getElementById('worker-url').value || '').trim().replace(/\/$/, '');
+        const wSecret = (document.getElementById('worker-secret').value || '').trim();
+        const emailResp = await fetch(wUrl + '/ai', {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": (document.getElementById('claude-key').value || '').trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          headers: { "Content-Type": "application/json", "X-Worker-Secret": wSecret },
           body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
             max_tokens: 2500,
@@ -1722,9 +1714,11 @@ Respond ONLY as a JSON array: [{"name":"...","title":"...","subject":"...","body
 No markdown, no backticks, no explanation.`;
 
     try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const dUrl = (document.getElementById('worker-url').value || '').trim().replace(/\/$/, '');
+      const dSecret = (document.getElementById('worker-secret').value || '').trim();
+      const resp = await fetch(dUrl + '/ai', {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": (document.getElementById('claude-key').value || '').trim(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        headers: { "Content-Type": "application/json", "X-Worker-Secret": dSecret },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 2000,
@@ -2106,12 +2100,7 @@ No markdown, no backticks, no explanation.`;
     if (savedSecret) {
       document.getElementById('worker-secret').value = savedSecret;
     }
-    const savedClaudeKey = localStorage.getItem('fh_claude_key') 
-      || document.getElementById('claude-key-default').value;
-    if (savedClaudeKey) {
-      document.getElementById('claude-key').value = savedClaudeKey;
-      localStorage.setItem('fh_claude_key', savedClaudeKey);
-    }
+
     // Auto-test connection if URL is saved
     if (savedUrl) {
       setTimeout(async () => {
