@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Hunter — AI Prospecting Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1814;
+    --card: #1f1d18;
+    --border: #2e2b22;
+    --accent: #f59e0b;
+    --accent2: #ef4444;
+    --accent3: #10b981;
+    --text: #f0ede6;
+    --muted: #7a7468;
+    --dim: #3a3730;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .app {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    animation: slideDown 0.5s ease both;
+  }
+
+  .header-left h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .header-left h1 span { color: var(--accent); }
+
+  .header-left p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 4px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent3);
+    box-shadow: 0 0 8px var(--accent3);
+    animation: pulse 2s infinite;
+  }
+
+  /* Config panel */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+    animation: slideUp 0.5s 0.1s ease both;
+  }
+
+  .config-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+  }
+
+  .config-card label {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .tag {
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: #9a9080;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .tag.active {
+    background: rgba(245,158,11,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .email-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+    animation: slideUp 0.5s 0.15s ease both;
+  }
+
+  .field {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+  }
+
+  .field label {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted); }
+
+  /* Run button */
+  .run-btn {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    color: #0f0e0c;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 30px;
+    animation: slideUp 0.5s 0.2s ease both;
+  }
+
+  .run-btn:hover { background: #fbbf24; transform: translateY(-1px); }
+  .run-btn:disabled { background: var(--dim); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* Agent log */
+  .agent-log {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    display: none;
+  }
+
+  .log-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .log-body {
+    padding: 16px 18px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+    font-family: monospace;
+    line-height: 1.8;
+    color: #7a8a6a;
+  }
+
+  .log-line { display: block; }
+  .log-line.info { color: #7a9a7a; }
+  .log-line.search { color: var(--accent); }
+  .log-line.found { color: var(--accent3); }
+  .log-line.error { color: var(--accent2); }
+
+  /* Results */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .results-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .results-count {
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: var(--accent3);
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .results-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    animation: slideUp 0.4s ease both;
+    transition: border-color 0.2s;
+  }
+
+  .result-card:hover { border-color: var(--accent); }
+
+  .rc-top {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 0;
+  }
+
+  .rc-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .rc-meta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .rc-chip {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .rc-chip strong { color: #b0a898; font-weight: 500; }
+
+  .exec-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .exec-chip {
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    border-radius: 4px;
+    padding: 7px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+    flex: 1;
+  }
+
+  .exec-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .exec-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .exec-email {
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .exec-email:hover { color: var(--accent3); text-decoration: underline; }
+
+  .fleet-badge {
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.35);
+    border-radius: 4px;
+    padding: 8px 16px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .fleet-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .fleet-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+  }
+
+  /* Email status */
+  .email-status {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 20px;
+    display: none;
+  }
+
+  .email-status.success { border-color: var(--accent3); }
+  .email-status.error { border-color: var(--accent2); }
+
+  .email-status p {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .email-status.success p { color: var(--accent3); }
+  .email-status.error p { color: #f87171; }
+
+  .email-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Thinking spinner */
+  .spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid var(--dim);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 6px;
+  }
+
+  /* Confidence score */
+  .confidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-left: 10px;
+  }
+  .confidence-high { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: var(--accent3); }
+  .confidence-medium { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: var(--accent); }
+  .confidence-low { background: rgba(107,114,128,0.15); border: 1px solid rgba(107,114,128,0.3); color: var(--muted); }
+
+  /* Cold email button */
+  .cold-email-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cold-email-btn:hover { background: rgba(239,68,68,0.1); }
+  .cold-email-btn.generating { opacity: 0.6; cursor: not-allowed; }
+
+  /* Cold email modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+    animation: slideUp 0.25s ease;
+  }
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .modal-subtitle { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-size: 16px;
+    width: 30px; height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--accent2); color: var(--accent2); }
+  .email-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .email-tab {
+    padding: 5px 12px;
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .email-tab.active { background: rgba(239,68,68,0.12); border-color: var(--accent2); color: var(--accent2); }
+  .email-content {
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #c0b8a8;
+    white-space: pre-wrap;
+    min-height: 200px;
+  }
+  .email-content.loading { display: flex; align-items: center; justify-content: center; color: var(--muted); gap: 10px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-btn {
+    padding: 9px 20px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .modal-btn-primary { background: var(--accent); color: #000; }
+  .modal-btn-primary:hover { background: #fbbf24; }
+  .modal-btn-secondary { background: var(--surface); border: 1px solid var(--dim); color: var(--muted); }
+  .modal-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Saved searches */
+  .saved-searches-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    animation: slideUp 0.5s 0.05s ease both;
+  }
+  .saved-searches-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .saved-searches-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .save-btn {
+    padding: 5px 14px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .save-btn:hover { background: rgba(245,158,11,0.1); }
+  .saved-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .saved-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #b0a898;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .saved-item:hover { border-color: var(--accent); color: var(--accent); }
+  .saved-item-del {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.2s;
+  }
+  .saved-item-del:hover { color: var(--accent2); }
+  .no-saves { font-size: 12px; color: var(--muted); font-style: italic; }
+
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  /* Salesforce push */
+  .sf-panel {
+    background: var(--card);
+    border: 1px solid rgba(0,161,224,0.3);
+    background: rgba(0,161,224,0.04);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    animation: slideUp 0.5s 0.19s ease both;
+  }
+  .sf-panel label {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #38bdf8;
+    margin-bottom: 10px;
+  }
+  .sf-row { display: flex; gap: 10px; align-items: center; }
+  .sf-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid rgba(0,161,224,0.25);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .sf-input:focus { border-color: #38bdf8; }
+  .sf-input::placeholder { color: var(--muted); }
+  .sf-secret-input {
+    width: 180px;
+    background: var(--surface);
+    border: 1px solid rgba(0,161,224,0.25);
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    outline: none;
+  }
+  .push-sf-btn {
+    display: none;
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid #0ea5e9;
+    color: #38bdf8;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+  }
+  .push-sf-btn:hover { background: rgba(14,165,233,0.1); }
+  .push-sf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .sf-status {
+    margin-top: 10px;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    display: none;
+  }
+  .sf-status.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--accent3); }
+  .sf-status.error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+</style>
+</head>
+<body>
+
+<!-- Cold Email Modal -->
+<div class="modal-overlay" id="email-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('email-modal').style.display='none'">✕</button>
+    <div class="modal-title" id="modal-company-name">Cold Outreach</div>
+    <div class="modal-subtitle" id="modal-company-sub">Personalized emails for each executive</div>
+    <div class="email-tabs" id="email-tabs"></div>
+    <div class="email-content" id="email-content"><span class="spinner"></span> Generating personalized emails...</div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-primary" onclick="copyEmail()">📋 Copy Email</button>
+      <button class="modal-btn modal-btn-secondary" onclick="openMailto()">📧 Open in Mail</button>
+      <button class="modal-btn modal-btn-secondary" onclick="document.getElementById('email-modal').style.display='none'">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Fleet <span>Hunter</span></h1>
+      <p>AI Prospecting Agent · Fleet-Heavy Industries · All 50 States</p>
+    </div>
+    <div class="badge"><div class="dot"></div> Apollo.io Connected</div>
+  </div>
+
+  <!-- Saved Searches -->
+  <div class="saved-searches-panel">
+    <div class="saved-searches-header">
+      <div class="saved-searches-title">💾 Saved Searches</div>
+      <button class="save-btn" onclick="saveCurrentSearch()">+ Save Current</button>
+    </div>
+    <div class="saved-list" id="saved-list"><span class="no-saves">No saved searches yet. Configure your filters and click "Save Current".</span></div>
+  </div>
+  <div style="margin-bottom:16px; animation: slideUp 0.5s 0.1s ease both;">
+    <div class="config-card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <label style="margin-bottom:0;">Target States</label>
+        <div style="display:flex; gap:8px;">
+          <button onclick="selectAllStates()" style="background:rgba(245,158,11,0.12);border:1px solid var(--accent);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:3px;cursor:pointer;">Select All</button>
+          <button onclick="clearAllStates()" style="background:var(--surface);border:1px solid var(--dim);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:3px;cursor:pointer;">Clear</button>
+          <span id="state-counter" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;align-self:center;">50 / 50</span>
+        </div>
+      </div>
+      <div class="tag-grid" id="city-tags">
+        <span class="tag active" data-val="Alabama">AL</span>
+        <span class="tag active" data-val="Alaska">AK</span>
+        <span class="tag active" data-val="Arizona">AZ</span>
+        <span class="tag active" data-val="Arkansas">AR</span>
+        <span class="tag active" data-val="California">CA</span>
+        <span class="tag active" data-val="Colorado">CO</span>
+        <span class="tag active" data-val="Connecticut">CT</span>
+        <span class="tag active" data-val="Delaware">DE</span>
+        <span class="tag active" data-val="Florida">FL</span>
+        <span class="tag active" data-val="Georgia">GA</span>
+        <span class="tag active" data-val="Hawaii">HI</span>
+        <span class="tag active" data-val="Idaho">ID</span>
+        <span class="tag active" data-val="Illinois">IL</span>
+        <span class="tag active" data-val="Indiana">IN</span>
+        <span class="tag active" data-val="Iowa">IA</span>
+        <span class="tag active" data-val="Kansas">KS</span>
+        <span class="tag active" data-val="Kentucky">KY</span>
+        <span class="tag active" data-val="Louisiana">LA</span>
+        <span class="tag active" data-val="Maine">ME</span>
+        <span class="tag active" data-val="Maryland">MD</span>
+        <span class="tag active" data-val="Massachusetts">MA</span>
+        <span class="tag active" data-val="Michigan">MI</span>
+        <span class="tag active" data-val="Minnesota">MN</span>
+        <span class="tag active" data-val="Mississippi">MS</span>
+        <span class="tag active" data-val="Missouri">MO</span>
+        <span class="tag active" data-val="Montana">MT</span>
+        <span class="tag active" data-val="Nebraska">NE</span>
+        <span class="tag active" data-val="Nevada">NV</span>
+        <span class="tag active" data-val="New Hampshire">NH</span>
+        <span class="tag active" data-val="New Jersey">NJ</span>
+        <span class="tag active" data-val="New Mexico">NM</span>
+        <span class="tag active" data-val="New York">NY</span>
+        <span class="tag active" data-val="North Carolina">NC</span>
+        <span class="tag active" data-val="North Dakota">ND</span>
+        <span class="tag active" data-val="Ohio">OH</span>
+        <span class="tag active" data-val="Oklahoma">OK</span>
+        <span class="tag active" data-val="Oregon">OR</span>
+        <span class="tag active" data-val="Pennsylvania">PA</span>
+        <span class="tag active" data-val="Rhode Island">RI</span>
+        <span class="tag active" data-val="South Carolina">SC</span>
+        <span class="tag active" data-val="South Dakota">SD</span>
+        <span class="tag active" data-val="Tennessee">TN</span>
+        <span class="tag active" data-val="Texas">TX</span>
+        <span class="tag active" data-val="Utah">UT</span>
+        <span class="tag active" data-val="Vermont">VT</span>
+        <span class="tag active" data-val="Virginia">VA</span>
+        <span class="tag active" data-val="Washington">WA</span>
+        <span class="tag active" data-val="West Virginia">WV</span>
+        <span class="tag active" data-val="Wisconsin">WI</span>
+        <span class="tag active" data-val="Wyoming">WY</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:16px; animation: slideUp 0.5s 0.12s ease both;">
+    <div class="config-card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <label style="margin-bottom:0;">Target Industries</label>
+        <div style="display:flex; gap:8px;">
+          <button onclick="selectAllIndustries()" style="background:rgba(245,158,11,0.12);border:1px solid var(--accent);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:3px;cursor:pointer;">Select All</button>
+          <button onclick="clearAllIndustries()" style="background:var(--surface);border:1px solid var(--dim);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:4px 12px;border-radius:3px;cursor:pointer;">Clear</button>
+          <span id="industry-counter" style="font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;align-self:center;">14 / 14</span>
+        </div>
+      </div>
+      <div class="tag-grid" id="industry-tags">
+        <span class="tag active" data-val="Construction & Contracting" data-icon="🏗️">🏗️ Construction</span>
+        <span class="tag active" data-val="Utilities (Electric, Gas, Water)" data-icon="⚡">⚡ Utilities</span>
+        <span class="tag active" data-val="HVAC (Heating, Ventilation & Air Conditioning)" data-icon="❄️">❄️ HVAC</span>
+        <span class="tag active" data-val="Plumbing" data-icon="🔧">🔧 Plumbing</span>
+        <span class="tag active" data-val="Electrical Contracting" data-icon="💡">💡 Electrical</span>
+        <span class="tag active" data-val="Pest Control & Environmental Services" data-icon="🌿">🌿 Pest Control / Environmental</span>
+        <span class="tag active" data-val="Engineering & Infrastructure Services" data-icon="📐">📐 Engineering</span>
+        <span class="tag active" data-val="Landscaping & Grounds Maintenance" data-icon="🌳">🌳 Landscaping</span>
+        <span class="tag active" data-val="Medical Transport & Non-Emergency Ambulance" data-icon="🚑">🚑 Medical Transport</span>
+        <span class="tag active" data-val="Fire Protection & Sprinkler Systems" data-icon="🔥">🔥 Fire Protection</span>
+        <span class="tag active" data-val="Oil & Gas Field Services" data-icon="🛢️">🛢️ Oil & Gas</span>
+        <span class="tag active" data-val="Traffic Control & Road Safety Services" data-icon="🚧">🚧 Traffic Control</span>
+        <span class="tag active" data-val="Telecom & Cable Installation" data-icon="📡">📡 Telecom / Cable</span>
+        <span class="tag active" data-val="Drain & Sewer Services" data-icon="🚰">🚰 Drain & Sewer</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:16px; animation: slideUp 0.5s 0.14s ease both;">
+    <div class="config-card">
+      <label>Fleet Size Minimum</label>
+      <div class="tag-grid" id="fleet-tags">
+        <span class="tag" data-val="25">25+ vehicles</span>
+        <span class="tag active" data-val="50">50+ vehicles</span>
+        <span class="tag" data-val="100">100+ vehicles</span>
+        <span class="tag" data-val="200">200+ vehicles</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="email-row">
+    <div class="field">
+      <label>Your Email Address</label>
+      <input type="email" id="email-input" placeholder="you@company.com" />
+    </div>
+    <div class="field">
+      <label>Your Name (for email greeting)</label>
+      <input type="text" id="name-input" placeholder="First name" />
+    </div>
+  </div>
+
+  <input type="hidden" id="apollo-key" value="w1f6sjrEz1EiMcvJRW2sTQ" />
+
+  <!-- Cloudflare Worker + Salesforce -->
+  <div style="margin-bottom:16px; animation: slideUp 0.5s 0.19s ease both;">
+    <div class="config-card" style="border-color:rgba(99,102,241,0.3); background:rgba(99,102,241,0.04);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <label style="margin-bottom:0; color:#818cf8;">☁️ Cloudflare Worker URL</label>
+        <span style="font-size:11px; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0;">Enables real Apollo data + auto Salesforce push</span>
+        <span id="worker-status" style="margin-left:auto; font-size:11px; font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted);">Not connected</span>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="worker-url" placeholder="https://fleet-hunter-worker.jowens-5e5.workers.dev" style="flex:1; background:var(--surface); border:1px solid rgba(99,102,241,0.25); border-radius:4px; padding:10px 14px; color:var(--text); font-family:'Barlow',sans-serif; font-size:13px; outline:none;" oninput="onWorkerUrlChange()" />
+        <input type="password" id="worker-secret" placeholder="Worker secret" oninput="onWorkerSecretChange()" style="width:160px; background:var(--surface); border:1px solid rgba(99,102,241,0.25); border-radius:4px; padding:10px 14px; color:var(--text); font-family:'Barlow',sans-serif; font-size:13px; outline:none;" />
+        <button onclick="testWorker()" style="background:transparent; border:1px solid #818cf8; color:#818cf8; font-family:'Barlow Condensed',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:10px 16px; border-radius:4px; cursor:pointer; white-space:nowrap; transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.1)'" onmouseout="this.style.background='transparent'">Test Connection</button>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:8px;">Deploy <strong style="color:#818cf8;">fleet-hunter-worker.js</strong> to Cloudflare Workers (free), paste the URL above, and results will auto-push to Salesforce + Apollo data will work.</div>
+    </div>
+  </div>
+
+  <button class="run-btn" id="run-btn" onclick="runAgent()">⚡ Run Fleet Hunter Agent</button>
+
+  <!-- Agent Log -->
+  <div class="agent-log" id="agent-log">
+    <div class="log-header"><span class="spinner"></span> Agent Activity Log</div>
+    <div class="log-body" id="log-body"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" style="display:none">
+    <div class="results-header">
+      <div class="results-title">Companies Found</div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div class="results-count" id="results-count">0 results</div>
+        <button id="sf-push-btn" onclick="pushToSalesforce()" style="display:none; background:transparent; border:1px solid #818cf8; color:#818cf8; font-family:'Barlow Condensed',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:5px 14px; border-radius:3px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.12)'" onmouseout="this.style.background='transparent'">☁ Push to Salesforce</button>
+      </div>
+    </div>
+    <div id="sf-push-status" style="display:none; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.3); border-radius:6px; padding:14px 18px; margin-bottom:14px; font-size:13px; color:#818cf8;"></div>
+    <div class="results-grid" id="results-grid"></div>
+    <div class="email-status" id="email-status">
+      <p id="email-status-text"></p>
+      <div class="email-note" id="email-note"></div>
+    </div>
+
+    <!-- Salesforce Push -->
+    <button class="push-sf-btn" id="push-sf-btn" onclick="pushToSalesforce()">
+      ☁️ Push All Results to Salesforce
+    </button>
+    <div class="sf-status" id="sf-status"></div>
+  </div>
+
+</div>
+
+<script>
+
+  // ═══════════════════════════════════════════════════════════════
+  // GLOBAL FUNCTIONS — must be global so onclick= attributes work
+  // ═══════════════════════════════════════════════════════════════
+
+  function updateStateCounter() {
+    const active = document.querySelectorAll('#city-tags .tag.active').length;
+    const total  = document.querySelectorAll('#city-tags .tag').length;
+    document.getElementById('state-counter').textContent = `${active} / ${total}`;
+  }
+  function selectAllStates() {
+    document.querySelectorAll('#city-tags .tag').forEach(t => t.classList.add('active'));
+    updateStateCounter();
+  }
+  function clearAllStates() {
+    document.querySelectorAll('#city-tags .tag').forEach(t => t.classList.remove('active'));
+    updateStateCounter();
+  }
+  function getSelectedCities() {
+    return [...document.querySelectorAll('#city-tags .tag.active')].map(t => t.dataset.val);
+  }
+
+  function updateIndustryCounter() {
+    const active = document.querySelectorAll('#industry-tags .tag.active').length;
+    const total  = document.querySelectorAll('#industry-tags .tag').length;
+    document.getElementById('industry-counter').textContent = `${active} / ${total}`;
+  }
+  function selectAllIndustries() {
+    document.querySelectorAll('#industry-tags .tag').forEach(t => t.classList.add('active'));
+    updateIndustryCounter();
+  }
+  function clearAllIndustries() {
+    document.querySelectorAll('#industry-tags .tag').forEach(t => t.classList.remove('active'));
+    updateIndustryCounter();
+  }
+  function getSelectedIndustries() {
+    return [...document.querySelectorAll('#industry-tags .tag.active')].map(t => t.dataset.val);
+  }
+
+  function getFleetMin() {
+    const t = document.querySelector('#fleet-tags .tag.active');
+    return t ? parseInt(t.dataset.val) : 50;
+  }
+
+  function getIconForType(type) {
+    const t = (type || '').toLowerCase();
+    if (t.includes('medical transport') || t.includes('ambulance')) return '🚑';
+    if (t.includes('landscap') || t.includes('grounds')) return '🌳';
+    if (t.includes('traffic control') || t.includes('road safety')) return '🚧';
+    if (t.includes('drain') || t.includes('sewer')) return '🚰';
+    if (t.includes('fire protect') || t.includes('sprinkler')) return '🔥';
+    if (t.includes('oil') || t.includes('gas field')) return '🛢️';
+    if (t.includes('telecom') || t.includes('cable')) return '📡';
+    if (t.includes('hvac') || t.includes('heating') || t.includes('air')) return '❄️';
+    if (t.includes('electrical') || t.includes('util')) return '⚡';
+    if (t.includes('plumb')) return '🔧';
+    if (t.includes('pest') || t.includes('environ')) return '🌿';
+    if (t.includes('engineer') || t.includes('infra')) return '📐';
+    if (t.includes('construct') || t.includes('contract')) return '🏗️';
+    return '🚛';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXCLUSION FILTERS
+  // ═══════════════════════════════════════════════════════════════
+
+  const EXCLUDED_KEYWORDS = [
+    'trucking','truck line','freight','semi truck','long haul','over the road',
+    'otr','truckload','ltl','less than truckload','carrier','hauling company',
+    'logistics carrier','transport logistics','motor freight','common carrier',
+    'fleet management','fleet solutions','fleet services company','telematics provider',
+    'gps fleet','fleet tracking company','fleet software','fleet technology',
+    'fleet consulting','samsara','verizon connect','geotab','fleetcomplete',
+    'spireon','omnitracs','teletrac','navman','lytx','fleetio','azuga'
+  ];
+
+  function isExcluded(company) {
+    const haystack = [
+      company.name || '', company.type || '', company.industry || '',
+      (company.keywords || []).join(' ')
+    ].join(' ').toLowerCase();
+    return EXCLUDED_KEYWORDS.some(kw => haystack.includes(kw));
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CONFIDENCE SCORE
+  // ═══════════════════════════════════════════════════════════════
+
+  // Real-world fleet-to-employee ratios by industry
+  const INDUSTRY_RATIOS = {
+    'medical transport': { min: 0.70, max: 1.00 },
+    'ambulance':         { min: 0.70, max: 1.00 },
+    'pest':              { min: 0.60, max: 0.90 },
+    'landscap':          { min: 0.50, max: 0.80 },
+    'grounds':           { min: 0.50, max: 0.80 },
+    'traffic control':   { min: 0.50, max: 0.80 },
+    'road safety':       { min: 0.50, max: 0.80 },
+    'drain':             { min: 0.50, max: 0.70 },
+    'sewer':             { min: 0.50, max: 0.70 },
+    'environ':           { min: 0.50, max: 0.70 },
+    'util':              { min: 0.50, max: 0.80 },
+    'oil':               { min: 0.30, max: 0.60 },
+    'gas field':         { min: 0.30, max: 0.60 },
+    'hvac':              { min: 0.40, max: 0.60 },
+    'heating':           { min: 0.40, max: 0.60 },
+    'plumb':             { min: 0.40, max: 0.60 },
+    'fire protect':      { min: 0.30, max: 0.50 },
+    'sprinkler':         { min: 0.30, max: 0.50 },
+    'telecom':           { min: 0.30, max: 0.50 },
+    'cable':             { min: 0.30, max: 0.50 },
+    'electric':          { min: 0.30, max: 0.50 },
+    'construct':         { min: 0.20, max: 0.40 },
+    'contract':          { min: 0.20, max: 0.40 },
+    'engineer':          { min: 0.10, max: 0.20 },
+    'infra':             { min: 0.15, max: 0.30 },
+  };
+
+  function getIndustryRatio(type) {
+    const t = (type || '').toLowerCase();
+    for (const [key, val] of Object.entries(INDUSTRY_RATIOS)) {
+      if (t.includes(key)) return val;
+    }
+    return { min: 0.20, max: 0.40 };
+  }
+
+  function hasFleetManagerSignal(c) {
+    return (c.executives || []).some(e =>
+      (e.title || '').toLowerCase().includes('fleet')
+    ) || !!c.hasFleetManager;
+  }
+
+  function estimateFleet(c) {
+    const emp = parseInt(c.employees) || 100;
+    const ratio = getIndustryRatio(c.type || '');
+    const mid = (ratio.min + ratio.max) / 2;
+    let est = Math.round(emp * mid);
+    if (hasFleetManagerSignal(c)) est = Math.round(est * 1.25); // fleet mgr = bigger fleet
+    return est;
+  }
+
+  function calcConfidence(c) {
+    const type = (c.type || '').toLowerCase();
+    const name = (c.name || '').toLowerCase();
+    const redFlags = ['trucking','freight','carrier','fleet management','telematics','fleet software'];
+    if (redFlags.some(f => type.includes(f) || name.includes(f))) {
+      return { label: 'Excluded', cls: 'confidence-low', icon: '✕' };
+    }
+    let score = 0;
+    const emp   = parseInt(c.employees) || 0;
+    const fleet = parseInt(c.fleet) || estimateFleet(c);
+    const ratio = getIndustryRatio(c.type);
+    const actualRatio = emp > 0 ? fleet / emp : 0;
+
+    // Employee size — boosted scale
+    if (emp >= 1000) score += 5;
+    else if (emp >= 500) score += 4;
+    else if (emp >= 250) score += 3;
+    else if (emp >= 150) score += 2;
+    else if (emp >= 75)  score += 1;
+
+    // Multi-state presence — strong fleet signal
+    const numLoc = parseInt(c.numLocations) || 1;
+    if (numLoc >= 21)     score += 2.5;
+    else if (numLoc >= 5) score += 2;
+    else if (numLoc >= 3) score += 1.5;
+    else if (numLoc >= 2) score += 1;
+
+    // Fleet size absolute (vehicles, not ratio)
+    if (fleet >= 100) score += 3;
+    else if (fleet >= 50) score += 2;
+    else if (fleet >= 25) score += 1;
+
+    // Fleet ratio vs industry benchmark
+    if (actualRatio >= ratio.min) score += 2;
+    else if (actualRatio >= ratio.min * 0.5) score += 1;
+
+    // Industry fleet density bonus
+    if (type.includes('medical transport') || type.includes('ambulance')) score += 3;
+    else if (type.includes('pest') || type.includes('landscap') || type.includes('traffic control')) score += 3;
+    else if (type.includes('drain') || type.includes('sewer') || type.includes('util')) score += 2;
+    else if (type.includes('hvac') || type.includes('plumb') || type.includes('fire protect')) score += 2;
+    else if (type.includes('telecom') || type.includes('cable') || type.includes('electric')) score += 2;
+    else if (type.includes('oil') || type.includes('gas field')) score += 2;
+    else if (type.includes('construct') || type.includes('contract')) score += 1;
+
+    // Fleet manager on staff = strong signal
+    if (hasFleetManagerSignal(c)) score += 3;
+
+    // Executive data quality
+    if (c.executives && c.executives.length >= 3) score += 2;
+    else if (c.executives && c.executives.length >= 1) score += 1;
+
+    // Lower thresholds to reflect realistic data
+    if (score >= 10) return { label: 'High',   cls: 'confidence-high',   icon: '●' };
+    if (score >= 5)  return { label: 'Medium', cls: 'confidence-medium', icon: '◑' };
+    return                   { label: 'Low',    cls: 'confidence-low',    icon: '○' };
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // AGENT LOG
+  // ═══════════════════════════════════════════════════════════════
+
+  function addLog(msg, type = 'info') {
+    const body = document.getElementById('log-body');
+    const line = document.createElement('span');
+    line.className = `log-line ${type}`;
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    body.appendChild(line);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RENDER RESULTS
+  // ═══════════════════════════════════════════════════════════════
+
+  function renderResults(companies) {
+    lastResults = companies; // store for SF push
+    const grid = document.getElementById('results-grid');
+    grid.innerHTML = '';
+    companies.forEach((c, i) => {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.style.animationDelay = `${i * 0.04}s`;
+      const icon = getIconForType(c.type || '');
+      const conf = calcConfidence(c);
+      const execHtml = (c.executives && c.executives.length)
+        ? `<div class="exec-row">${c.executives.map(e => `
+            <div class="exec-chip">
+              <span class="exec-title">${e.title}</span>
+              <span class="exec-name">${e.name}</span>
+              <a class="exec-email" href="mailto:${e.email}">${e.email}</a>
+              ${e.phone ? `<a class="exec-email" href="tel:${e.phone}">📞 ${e.phone}</a>` : ''}
+              ${e.linkedin ? `<a class="exec-email" href="${e.linkedin}" target="_blank">🔗 LinkedIn</a>` : ''}
+            </div>`).join('')}</div>`
+        : '';
+      const coldEmailBtn = (c.executives && c.executives.length)
+        ? `<button class="cold-email-btn" onclick='openColdEmailModal(${JSON.stringify(c).replace(/'/g, "&#39;")})'>✉ Generate Cold Emails</button>`
+        : '';
+      card.innerHTML = `
+        <div class="rc-top">
+          <div class="rc-info">
+            <div class="rc-name">
+              ${c.name}
+              <span class="confidence-badge ${conf.cls}">${conf.icon} ${conf.label} Confidence</span>
+            </div>
+            <div class="rc-meta">
+              <span class="rc-chip">📍 <strong>${c.city}</strong>${(c.numLocations && c.numLocations > 1) ? ' &nbsp;<span style="color:var(--accent);font-weight:700;font-size:11px;">· ' + c.numLocations + ' locations</span>' : ''}</span>
+              <span class="rc-chip">${icon} <strong>${c.type}</strong></span>
+              <span class="rc-chip">👥 <strong>${c.employees} employees</strong></span>
+              <span class="rc-chip">📞 <strong>${c.phone}</strong></span>
+              ${c.website ? `<span class="rc-chip">🌐 <a href="${c.website}" target="_blank" style="color:var(--accent3);text-decoration:none;">${c.website.replace(/^https?:\/\//, '')}</a></span>` : ''}
+            </div>
+            ${coldEmailBtn}
+          </div>
+          <div class="fleet-badge">
+            <div class="fleet-num">${c.fleet || estimateFleet(c)}</div>
+            <div class="fleet-label">Est. Fleet</div>
+            ${hasFleetManagerSignal(c) ? '<div style="display:inline-block;margin-top:5px;padding:3px 8px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);border-radius:4px;font-size:10px;color:#10b981;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">✓ Fleet Manager on Staff</div>' : ''}
+          </div>
+        </div>
+        ${execHtml}
+      `;
+      grid.appendChild(card);
+    });
+    document.getElementById('results-count').textContent = `${companies.length} results`;
+    document.getElementById('results-section').style.display = 'block';
+    // Show SF push button if worker URL is configured
+    const workerUrl = document.getElementById('worker-url').value.trim();
+    if (workerUrl) document.getElementById('push-sf-btn').style.display = 'block';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MAIN AGENT
+  // ═══════════════════════════════════════════════════════════════
+
+  async function runAgent() {
+    const states     = getSelectedCities();
+    const industries = getSelectedIndustries();
+    const fleetMin   = getFleetMin();
+    const email      = document.getElementById('email-input').value.trim();
+    const name       = document.getElementById('name-input').value.trim() || 'there';
+    const apolloKey    = document.getElementById('apollo-key').value.trim();
+    const workerUrl    = (document.getElementById('worker-url').value || '').trim().replace(/\/$/, '');
+    const workerSecret = (document.getElementById('worker-secret').value || '').trim();
+    const useApollo    = !!(workerUrl && apolloKey);
+
+    if (!states.length)     { alert('Please select at least one state.');    return; }
+    if (!industries.length) { alert('Please select at least one industry.'); return; }
+    if (!email)             { alert('Please enter your email address.');      return; }
+
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Agent Running...';
+
+    const logEl = document.getElementById('agent-log');
+    logEl.style.display = 'block';
+    document.getElementById('log-body').innerHTML = '';
+    document.getElementById('results-section').style.display = 'none';
+    document.getElementById('email-status').style.display = 'none';
+
+    addLog(`Agent initialized. Fleet minimum: ${fleetMin}+ vehicles`, 'info');
+    addLog(`Target industries: ${industries.length} selected`, 'info');
+    addLog(`Target states: ${states.length} selected`, 'info');
+
+    if (apolloKey) {
+      addLog('Apollo.io key active — fetching real verified data...', 'found');
+    } else {
+      addLog('No Apollo key — using AI-estimated data mode...', 'info');
+    }
+
+    const sample = states.slice(0, Math.min(states.length, 5));
+    for (const state of sample) {
+      addLog(`Scanning ${state} across ${industries.length} industries...`, 'search');
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (states.length > 5) addLog(`...and ${states.length - 5} more states`, 'search');
+
+    if (useApollo) {
+      addLog('Worker detected — using Apollo.io for real verified data...', 'found');
+    } else if (workerUrl && !apolloKey) {
+      addLog('Worker connected but no Apollo key — using AI estimates...', 'info');
+    } else {
+      addLog('No worker URL — using AI-estimated data mode...', 'info');
+    }
+
+    let allCompanies = [];
+
+    // ── APOLLO MODE via Cloudflare Worker proxy ──
+    if (useApollo) {
+      const industryKeywords = industries.flatMap(ind => {
+        // High fleet-ratio industries first (Apollo takes up to 5 keyword tags)
+        if (ind.includes('Medical'))       return ['medical transport', 'non-emergency ambulance', 'patient transport'];
+        if (ind.includes('Pest'))          return ['pest control', 'extermination', 'environmental services'];
+        if (ind.includes('Landscaping'))   return ['landscaping', 'grounds maintenance', 'lawn care'];
+        if (ind.includes('Traffic'))       return ['traffic control', 'road safety', 'traffic management'];
+        if (ind.includes('Drain'))         return ['drain services', 'sewer services', 'drain cleaning'];
+        if (ind.includes('Utilities'))     return ['utilities', 'electric utility', 'water utility'];
+        if (ind.includes('HVAC'))          return ['hvac', 'heating ventilation air conditioning'];
+        if (ind.includes('Plumbing'))      return ['plumbing', 'mechanical contractor'];
+        if (ind.includes('Fire'))          return ['fire protection', 'fire sprinkler', 'fire suppression'];
+        if (ind.includes('Telecom'))       return ['telecom installation', 'cable installation', 'telecommunications'];
+        if (ind.includes('Electrical'))    return ['electrical contractor', 'electrical contracting'];
+        if (ind.includes('Oil'))           return ['oil field services', 'gas field services', 'oilfield'];
+        if (ind.includes('Construction'))  return ['construction', 'general contracting', 'excavation'];
+        if (ind.includes('Engineering'))   return ['civil engineering', 'infrastructure services'];
+        return [];
+      });
+
+      const stateAbbr = {
+        'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA',
+        'Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA',
+        'Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS',
+        'Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA',
+        'Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT',
+        'Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM',
+        'New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK',
+        'Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC',
+        'South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT',
+        'Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY'
+      };
+      const stateAbbrevs = states.map(s => stateAbbr[s] || s);
+
+      // Build per-industry keyword groups for variety
+      const industryGroups = industries.map(ind => {
+        const keywords = (function() {
+          if (ind.includes('Medical'))       return ['medical transport', 'non-emergency ambulance'];
+          if (ind.includes('Pest'))          return ['pest control', 'extermination'];
+          if (ind.includes('Landscaping'))   return ['landscaping', 'grounds maintenance'];
+          if (ind.includes('Traffic'))       return ['traffic control', 'road safety'];
+          if (ind.includes('Drain'))         return ['drain services', 'sewer services'];
+          if (ind.includes('Utilities'))     return ['utilities', 'water utility'];
+          if (ind.includes('HVAC'))          return ['hvac', 'heating air conditioning'];
+          if (ind.includes('Plumbing'))      return ['plumbing', 'mechanical contractor'];
+          if (ind.includes('Fire'))          return ['fire protection', 'fire sprinkler'];
+          if (ind.includes('Telecom'))       return ['telecom installation', 'cable installation'];
+          if (ind.includes('Electrical'))    return ['electrical contractor'];
+          if (ind.includes('Oil'))           return ['oil field services', 'oilfield'];
+          if (ind.includes('Construction'))  return ['construction', 'general contracting'];
+          if (ind.includes('Engineering'))   return ['civil engineering', 'infrastructure'];
+          return ['field services'];
+        })();
+        return { label: ind, keywords };
+      });
+
+      const seenOrgIds = new Set();
+      const stateLocations = stateAbbrevs.map(s => s + ', US');
+
+      // Search Apollo once per industry group to ensure variety
+      for (let gi = 0; gi < industryGroups.length; gi++) {
+        const group = industryGroups[gi];
+        addLog('Querying Apollo — ' + group.label.split('&')[0].trim() + ' (' + stateAbbrevs.join(', ') + ')...', 'search');
+        try {
+          const apolloResp = await fetch(workerUrl + '/apollo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Worker-Secret': workerSecret },
+            body: JSON.stringify({
+              endpoint: 'https://api.apollo.io/v1/mixed_companies/search',
+              payload: {
+                page: 1,
+                per_page: 10,
+                organization_locations: stateLocations,
+                q_organization_keyword_tags: group.keywords,
+                organization_num_employees_ranges: ['75,10000'],
+                q_organization_not_keyword_tags: [
+                  'trucking','freight','carrier','semi truck','long haul',
+                  'fleet management','fleet software','telematics','gps tracking'
+                ]
+              }
+            })
+          });
+
+          if (apolloResp.ok) {
+            const apolloData = await apolloResp.json();
+            const orgs = (apolloData.organizations || []).filter(o => !seenOrgIds.has(o.id));
+            orgs.forEach(o => seenOrgIds.add(o.id));
+            addLog(group.label.split('&')[0].trim() + ': ' + orgs.length + ' companies found', orgs.length > 0 ? 'found' : 'info');
+            if (orgs.length > 0) {
+              const sample = orgs[0];
+              addLog('Sample emp fields — estimated_num_employees: ' + sample.estimated_num_employees + ', num_employees: ' + sample.num_employees + ', num_employees_range: ' + sample.num_employees_range + ', employee_count: ' + sample.employee_count, 'info');
+            }
+
+            for (const org of orgs) {
+              // Extract employee count — Apollo uses several fields
+              let empCount = org.estimated_num_employees || org.num_employees || 0;
+
+              // Apollo employee range buckets e.g. "1,10" "11,20" "21,50" "51,100"
+              // "101,200" "201,500" "501,1000" "1001,2000" "5001,10000" etc.
+              if (!empCount && org.num_employees_range) {
+                const parts = org.num_employees_range.replace(/[^0-9,]/g, '').split(',').map(Number).filter(Boolean);
+                if (parts.length >= 2) {
+                  empCount = Math.round((parts[0] + parts[1]) / 2); // use midpoint
+                } else if (parts.length === 1) {
+                  empCount = parts[0];
+                }
+              }
+
+              // Try employee_count or headcount fields Apollo sometimes returns
+              if (!empCount) empCount = org.employee_count || org.headcount || 0;
+
+              // If still nothing, mark as unknown rather than defaulting to 100
+              const empDisplay = empCount > 0 ? empCount : '—';
+              if (!empCount) empCount = 150; // fallback for fleet estimation only
+
+              let executives = [];
+              try {
+                const peopleResp = await fetch(workerUrl + '/apollo', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'X-Worker-Secret': workerSecret },
+                  body: JSON.stringify({
+                    endpoint: 'https://api.apollo.io/v1/mixed_people/search',
+                    payload: {
+                      page: 1, per_page: 8,
+                      organization_ids: [org.id],
+                      person_titles: ['CEO','CFO','COO','President','Vice President','Owner','Fleet Manager','Director of Fleet','VP of Operations','Director of Operations']
+                    }
+                  })
+                });
+                if (peopleResp.ok) {
+                  const pd = await peopleResp.json();
+                  executives = (pd.people || []).map(p => ({
+                    title: p.title || 'Executive',
+                    name: p.name || '',
+                    email: p.email || '',
+                    phone: (p.phone_numbers && p.phone_numbers[0]) ? p.phone_numbers[0].sanitized_number : (org.phone || ''),
+                    linkedin: p.linkedin_url ? (p.linkedin_url.startsWith('http') ? p.linkedin_url : 'https://' + p.linkedin_url) : ''
+                  }));
+                }
+              } catch(e) {}
+
+              const hasFleetMgr = executives.some(e => (e.title || '').toLowerCase().includes('fleet'));
+
+              allCompanies.push({
+                name: org.name,
+                city: (org.city || '') + ', ' + (org.state || ''),
+                type: org.industry || group.label,
+                employees: empDisplay,
+                fleet: estimateFleet({ employees: empCount, type: org.industry || group.label }),
+                hasFleetManager: hasFleetMgr,
+                numLocations: org.num_suborganizations || org.num_locations || 1,
+                phone: org.phone || '—',
+                website: org.website_url || '',
+                executives
+              });
+            }
+          } else {
+            const errData = await apolloResp.json().catch(() => ({}));
+            addLog('Apollo error (' + apolloResp.status + '): ' + (errData.message || 'check API key'), 'error');
+          }
+        } catch(err) {
+          addLog('Apollo error — ' + group.label.split('&')[0].trim() + ': ' + err.message, 'error');
+        }
+        await new Promise(r => setTimeout(r, 300));
+      }
+
+    // ── AI MULTI-PASS MODE ────────────────────────────────────────
+    } else {
+      const PASSES = 3;
+      const seenNames = new Set();
+      const batches = [];
+      for (let i = 0; i < states.length; i += 10) batches.push(states.slice(i, i + 10));
+
+      const passLabels = [
+        'Pass 1 — Large established companies (200+ employees)',
+        'Pass 2 — Mid-size regional operators (100-200 employees)',
+        'Pass 3 — Growing local companies (50-100 employees)'
+      ];
+      const passFocus = [
+        'Focus on large, well-established companies with 200+ employees — major regional or national operations.',
+        'Focus on mid-size regional operators with 100-200 employees — established local contractors with multiple locations.',
+        'Focus on smaller but fast-growing local companies with 50-100 employees — owner-operated, niche specialists.'
+      ];
+
+      for (let pass = 0; pass < PASSES; pass++) {
+        addLog('Starting ' + passLabels[pass] + '...', 'search');
+
+        for (let b = 0; b < batches.length; b++) {
+          const batch = batches[b];
+          const seenList = allCompanies.length > 0
+            ? 'Do NOT repeat any of these already-found companies: ' + allCompanies.map(c => c.name).join(', ')
+            : '';
+
+          const prompt = 'You are a commercial fleet intelligence agent. Find businesses in these US states with ' + fleetMin + '+ vehicle fleets.\n\nTarget industries: ' + industries.join('; ') + '\nStates: ' + batch.join(', ') + '\n' + passFocus[pass] + '\n\nSTRICT EXCLUSIONS — never include trucking/freight/carrier/semi-truck companies or fleet management software/telematics vendors. Only companies that USE a fleet to deliver their own service.\n' + seenList + '\n\nGenerate 3-5 unique realistic companies per state spread across different industries and cities.\n\nFor fleet size use realistic ratios: medical transport 0.7-1.0, pest control/landscaping/traffic control 0.5-0.8, drain/sewer/utilities/environmental 0.5-0.7, HVAC/plumbing 0.4-0.6, fire protection/telecom/cable/electrical/oil & gas 0.3-0.5, construction 0.2-0.4, engineering 0.1-0.2. Set hasFleetManager:true if the company would realistically employ a dedicated Fleet Manager (generally 75+ vehicles). If hasFleetManager is true, include a Fleet Manager in executives.\n\nReturn ONLY a valid JSON array, no markdown:\n[{"name":"...","city":"City, ST","type":"e.g. Commercial HVAC","employees":250,"fleet":95,"hasFleetManager":true,"phone":"(555) 555-0100","executives":[{"title":"CEO","name":"Full Name","email":"f.name@co.com","phone":"(555) 555-0101","linkedin":"https://www.linkedin.com/in/first-last"},{"title":"Fleet Manager","name":"Full Name","email":"f.name@co.com","phone":"(555) 555-0102","linkedin":"https://www.linkedin.com/in/first-last"}]}]';
+
+          try {
+            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 4000,
+                messages: [{ role: "user", content: prompt }]
+              })
+            });
+            const data = await resp.json();
+            const raw = data.content.map(i => i.text || '').join('');
+            const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+            const fresh = parsed.filter(c => {
+              const key = (c.name || '').toLowerCase().trim();
+              if (seenNames.has(key)) return false;
+              seenNames.add(key);
+              return true;
+            });
+
+            allCompanies = allCompanies.concat(fresh);
+            addLog('Pass ' + (pass+1) + ' · Batch ' + (b+1) + ': +' + fresh.length + ' new (' + allCompanies.length + ' total)', 'found');
+          } catch(err) {
+            addLog('Pass ' + (pass+1) + ' · Batch ' + (b+1) + ' error: ' + err.message, 'error');
+          }
+          await new Promise(r => setTimeout(r, 300));
+        }
+        addLog('Pass ' + (pass+1) + ' complete — ' + allCompanies.length + ' total so far.', 'info');
+      }
+    }
+
+    // ── ENRICH EMPLOYEE COUNTS from multiple sources ─────────────
+    const needsEnrichment = allCompanies.filter(c => !c.employees || c.employees === '—' || parseInt(c.employees) === 150);
+    if (workerUrl && needsEnrichment.length > 0) {
+      addLog('Enriching employee data for ' + needsEnrichment.length + ' companies...', 'search');
+      let enriched = 0;
+      for (const c of needsEnrichment) {
+        try {
+          const enrichResp = await fetch(workerUrl + '/enrich', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Worker-Secret': workerSecret },
+            body: JSON.stringify({ company: { name: c.name, website: c.website, city: c.city, type: c.type } })
+          });
+          if (enrichResp.ok) {
+            const enrichData = await enrichResp.json();
+            if (enrichData.employees && enrichData.employees > 0) {
+              c.employees = enrichData.employees;
+              c.fleet = estimateFleet(c);
+              if (enrichData.locations) c.numLocations = enrichData.locations;
+              enriched++;
+            }
+          }
+        } catch(e) {}
+        await new Promise(r => setTimeout(r, 150));
+      }
+      if (enriched > 0) addLog('✓ Enriched ' + enriched + ' companies with real employee counts', 'found');
+    }
+
+    // ── APPLY EXCLUSIONS ─────────────────────────────────────────
+    const before = allCompanies.length;
+    allCompanies = allCompanies.filter(c => !isExcluded(c));
+    const removed = before - allCompanies.length;
+    if (removed > 0) addLog(`Excluded ${removed} companies (semi-truck / fleet management).`, 'info');
+
+    if (!allCompanies.length) {
+      addLog('No results returned. Please try again.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '⚡ Run Fleet Hunter Agent';
+      return;
+    }
+
+    addLog(`✓ ${allCompanies.length} qualifying companies found.`, 'found');
+    lastResults = allCompanies;
+    renderResults(allCompanies);
+    if (workerUrl) {
+      const sfBtn = document.getElementById('sf-push-btn');
+      if (sfBtn) sfBtn.style.display = 'block';
+    }
+
+    // ── EMAIL SUMMARY ─────────────────────────────────────────────
+    if (email) {
+      addLog(`Composing email summary to ${email}...`, 'search');
+      const emailPrompt = `Draft a professional prospecting summary email.
+
+Recipient: ${name}
+Search: ${states.length} US states, ${fleetMin}+ vehicle fleets, industries: ${industries.join(', ')}
+Results: ${allCompanies.length} companies
+
+${allCompanies.map(c => {
+  const execs = (c.executives || []).map(e => `    • ${e.title}: ${e.name} | ${e.email} | ${e.phone || 'N/A'} | ${e.linkedin || 'N/A'}`).join('\n');
+  return `- ${c.name} (${c.city}) | ${c.type} | ~${c.fleet} vehicles | ${c.employees} employees | ${c.phone}\n${execs}`;
+}).join('\n\n')}
+
+Write a concise, professional email grouping companies by industry with full executive contact details. Format: Subject: [subject]\n\n[body]. Under 1000 words.`;
+
+      try {
+        const emailResp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2500,
+            messages: [{ role: "user", content: emailPrompt }]
+          })
+        });
+        const emailData = await emailResp.json();
+        const emailText = emailData.content.map(i => i.text || '').join('');
+        addLog('Email drafted. Opening mail client...', 'found');
+
+        const subject = encodeURIComponent(`Fleet Hunter: ${allCompanies.length} Companies Found (${fleetMin}+ Vehicles · ${industries.length} Industries · ${states.length} States)`);
+        const body    = encodeURIComponent(emailText.replace(/^Subject:.*\n\n/, ''));
+
+        const statusEl = document.getElementById('email-status');
+        statusEl.className = 'email-status success';
+        statusEl.style.display = 'block';
+        document.getElementById('email-status-text').textContent = `✓ Email summary ready for ${email}`;
+        document.getElementById('email-note').innerHTML = `
+          <a href="mailto:${email}?subject=${subject}&body=${body}" style="color:var(--accent);text-decoration:none;font-weight:600;">
+            📧 Click here to open in your mail client →
+          </a><br><br>
+          <span style="font-size:11px;color:var(--muted);">Full automated delivery requires a backend mail service (SendGrid, Mailgun, etc).</span>
+        `;
+      } catch(e) {
+        addLog('Email composition failed.', 'error');
+      }
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Run Fleet Hunter Agent';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // COLD EMAIL MODAL
+  // ═══════════════════════════════════════════════════════════════
+
+  let modalEmails  = [];
+  let activeTabIdx = 0;
+
+  function closeModal(e) {
+    if (e.target.id === 'email-modal') document.getElementById('email-modal').style.display = 'none';
+  }
+
+  async function openColdEmailModal(company) {
+    const modal = document.getElementById('email-modal');
+    document.getElementById('modal-company-name').textContent = company.name;
+    document.getElementById('modal-company-sub').textContent  = `${company.city} · ${company.type} · Est. ${company.fleet} vehicles`;
+    document.getElementById('email-tabs').innerHTML    = '';
+    document.getElementById('email-content').className = 'email-content loading';
+    document.getElementById('email-content').innerHTML = '<span class="spinner"></span> Generating personalized emails...';
+    modal.style.display = 'flex';
+    modalEmails  = [];
+    activeTabIdx = 0;
+
+    const execs = company.executives || [];
+    if (!execs.length) {
+      document.getElementById('email-content').className = 'email-content';
+      document.getElementById('email-content').textContent = 'No executives found for this company.';
+      return;
+    }
+
+    const prompt = `You are an expert B2B sales copywriter. Write personalized cold outreach emails for each executive at ${company.name}, a ${company.type} company in ${company.city} with ~${company.employees} employees and an estimated fleet of ${company.fleet} vehicles.
+
+The emails are from a fleet sales rep offering fleet management/services solutions.
+
+Executives:
+${execs.map((e, i) => `${i+1}. ${e.name} — ${e.title}`).join('\n')}
+
+For each executive write a cold email tailored to their role:
+- CEO/Owner: ROI and cost savings
+- CFO: financial savings, measurable payback
+- COO/VP: operational efficiency and reliability
+
+Rules: compelling subject line, personalized hook, brief value prop, soft specific CTA (15-min call), 150-200 words max.
+
+Respond ONLY as a JSON array: [{"name":"...","title":"...","subject":"...","body":"..."}]
+No markdown, no backticks, no explanation.`;
+
+    try {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await resp.json();
+      const raw  = data.content.map(i => i.text || '').join('');
+      modalEmails = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+      const tabsEl = document.getElementById('email-tabs');
+      tabsEl.innerHTML = '';
+      modalEmails.forEach((em, idx) => {
+        const tab = document.createElement('button');
+        tab.className = 'email-tab' + (idx === 0 ? ' active' : '');
+        tab.textContent = `${em.title}: ${em.name.split(' ')[0]}`;
+        tab.onclick = () => switchTab(idx);
+        tabsEl.appendChild(tab);
+      });
+      switchTab(0);
+    } catch(err) {
+      document.getElementById('email-content').className = 'email-content';
+      document.getElementById('email-content').textContent = 'Error generating emails. Please try again.';
+    }
+  }
+
+  function switchTab(idx) {
+    activeTabIdx = idx;
+    document.querySelectorAll('.email-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+    const em = modalEmails[idx];
+    document.getElementById('email-content').className = 'email-content';
+    document.getElementById('email-content').textContent = `Subject: ${em.subject}\n\n${em.body}`;
+  }
+
+  function copyEmail() {
+    if (!modalEmails[activeTabIdx]) return;
+    const em = modalEmails[activeTabIdx];
+    navigator.clipboard.writeText(`Subject: ${em.subject}\n\n${em.body}`);
+    const btn = document.querySelector('.modal-btn-primary');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }
+
+  function openMailto() {
+    if (!modalEmails[activeTabIdx]) return;
+    const em = modalEmails[activeTabIdx];
+    window.location.href = `mailto:?subject=${encodeURIComponent(em.subject)}&body=${encodeURIComponent(em.body)}`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SAVED SEARCHES (in-memory)
+  // ═══════════════════════════════════════════════════════════════
+
+  let savedSearches = [];
+
+  function renderSavedList() {
+    const el = document.getElementById('saved-list');
+    if (!savedSearches.length) {
+      el.innerHTML = '<span class="no-saves">No saved searches yet. Configure your filters and click "+ Save Current".</span>';
+      return;
+    }
+    el.innerHTML = savedSearches.map((s, i) => `
+      <div class="saved-item" onclick="loadSave(${i})">
+        <span>📁 ${s.label}</span>
+        <span class="saved-item-del" onclick="deleteSave(event,${i})">✕</span>
+      </div>`).join('');
+  }
+
+  function saveCurrentSearch() {
+    const states     = getSelectedCities();
+    const industries = getSelectedIndustries();
+    const fleetMin   = getFleetMin();
+    if (!states.length && !industries.length) { alert('Nothing to save — select some filters first.'); return; }
+    const label = prompt('Name this search:', `${states.length} states · ${industries.length} industries · ${fleetMin}+ fleet`);
+    if (!label) return;
+    savedSearches.unshift({ label, states, industries, fleetMin });
+    renderSavedList();
+  }
+
+  function loadSave(idx) {
+    const s = savedSearches[idx];
+    if (!s) return;
+    document.querySelectorAll('#city-tags .tag').forEach(t => {
+      t.classList.toggle('active', s.states.includes(t.dataset.val));
+    });
+    updateStateCounter();
+    document.querySelectorAll('#industry-tags .tag').forEach(t => {
+      t.classList.toggle('active', s.industries.includes(t.dataset.val));
+    });
+    updateIndustryCounter();
+    document.querySelectorAll('#fleet-tags .tag').forEach(t => {
+      t.classList.toggle('active', parseInt(t.dataset.val) === s.fleetMin);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function deleteSave(e, idx) {
+    e.stopPropagation();
+    savedSearches.splice(idx, 1);
+    renderSavedList();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DOM READY — bind click listeners
+  // ═══════════════════════════════════════════════════════════════
+
+  // ── SALESFORCE PUSH ──────────────────────────────────────────
+  let lastResults = [];
+
+  function onWorkerUrlChange() {
+    const val = (document.getElementById('worker-url').value || '').trim();
+    const status = document.getElementById('worker-status');
+    localStorage.setItem('fh_worker_url', val);
+    if (val) {
+      status.textContent = 'Not tested';
+      status.style.color = 'var(--accent)';
+    } else {
+      status.textContent = 'Not connected';
+      status.style.color = 'var(--muted)';
+    }
+  }
+
+  function onWorkerSecretChange() {
+    const val = (document.getElementById('worker-secret').value || '').trim();
+    localStorage.setItem('fh_worker_secret', val);
+  }
+
+  async function testWorker() {
+    const url = (document.getElementById('worker-url').value || '').trim().replace(/\/$/, '');
+    const status = document.getElementById('worker-status');
+    if (!url) { alert('Paste your Worker URL first.'); return; }
+    status.textContent = 'Testing...';
+    status.style.color = 'var(--accent)';
+    try {
+      const resp = await fetch(url + '/health');
+      const data = await resp.json();
+      if (data.status === 'ok') {
+        status.textContent = '✓ Worker is live and connected!';
+        status.style.color = 'var(--accent3)';
+      } else {
+        status.textContent = '✗ ' + (data.error || 'Unexpected response');
+        status.style.color = 'var(--accent2)';
+      }
+    } catch(e) {
+      status.textContent = '✗ Could not reach worker — check URL';
+      status.style.color = 'var(--accent2)';
+    }
+  }
+
+  async function pushToSalesforce() {
+    const workerUrl = document.getElementById('worker-url').value.trim();
+    const workerSecret = document.getElementById('worker-secret').value.trim();
+    const statusEl = document.getElementById('sf-status');
+
+    if (!workerUrl) {
+      statusEl.className = 'sf-status error';
+      statusEl.style.display = 'block';
+      statusEl.textContent = '✗ Enter your Cloudflare Worker URL first.';
+      return;
+    }
+    if (!workerSecret) {
+      statusEl.className = 'sf-status error';
+      statusEl.style.display = 'block';
+      statusEl.textContent = '✗ Enter your Worker secret.';
+      return;
+    }
+    if (!lastResults.length) {
+      statusEl.className = 'sf-status error';
+      statusEl.style.display = 'block';
+      statusEl.textContent = '✗ Run a search first to get results.';
+      return;
+    }
+
+    const btn = document.getElementById('push-sf-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Pushing to Salesforce...';
+    statusEl.style.display = 'none';
+
+    try {
+      const resp = await fetch(workerUrl + '/salesforce/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Worker-Secret': workerSecret,
+        },
+        body: JSON.stringify({ companies: lastResults }),
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok && data.success) {
+        statusEl.className = 'sf-status success';
+        statusEl.style.display = 'block';
+        statusEl.textContent = '✓ ' + data.message;
+        btn.innerHTML = '✓ Pushed to Salesforce';
+      } else {
+        throw new Error(data.error || data.message || 'Unknown error');
+      }
+    } catch (err) {
+      statusEl.className = 'sf-status error';
+      statusEl.style.display = 'block';
+      statusEl.textContent = '✗ Push failed: ' + err.message;
+      btn.disabled = false;
+      btn.innerHTML = '☁️ Push All Results to Salesforce';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Restore saved worker URL and secret
+    const savedUrl = localStorage.getItem('fh_worker_url');
+    const savedSecret = localStorage.getItem('fh_worker_secret');
+    if (savedUrl) {
+      document.getElementById('worker-url').value = savedUrl;
+      const status = document.getElementById('worker-status');
+      if (status) { status.textContent = 'Saved — click Test Connection'; status.style.color = 'var(--accent)'; }
+    }
+    if (savedSecret) {
+      document.getElementById('worker-secret').value = savedSecret;
+    }
+    // Auto-test connection if URL is saved
+    if (savedUrl) {
+      setTimeout(async () => {
+        try {
+          const resp = await fetch(savedUrl.replace(/\/$/, '') + '/health');
+          const data = await resp.json();
+          const status = document.getElementById('worker-status');
+          if (data.status === 'ok') {
+            status.textContent = '✓ Connected';
+            status.style.color = 'var(--accent3)';
+          }
+        } catch(e) {}
+      }, 800);
+    }
+    document.querySelectorAll('#city-tags .tag').forEach(t => {
+      t.addEventListener('click', () => { t.classList.toggle('active'); updateStateCounter(); });
+    });
+    document.querySelectorAll('#industry-tags .tag').forEach(t => {
+      t.addEventListener('click', () => { t.classList.toggle('active'); updateIndustryCounter(); });
+    });
+    document.querySelectorAll('#fleet-tags .tag').forEach(t => {
+      t.addEventListener('click', () => {
+        document.querySelectorAll('#fleet-tags .tag').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+      });
+    });
+    renderSavedList();
+  });
+
+</script>
+</body>
+</html>
